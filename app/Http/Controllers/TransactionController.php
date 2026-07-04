@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Auth;
 class TransactionController extends Controller
 {
     public function index() {
-        $transactions = Auth::user()->transactions()->latest()->get();
+        $transactions = Auth::user()->transactions()->latest()->paginate(10);
 
         return response()->json([
             'success' => true,
