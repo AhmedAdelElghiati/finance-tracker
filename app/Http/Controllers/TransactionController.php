@@ -95,7 +95,7 @@ class TransactionController extends Controller
 
         $totalIncome = (clone $transactions)->where('type' , 'income')->sum('amount');
         $totalExpense = (clone $transactions)->where('type' , 'expense')->sum('amount');
-        $totalBalance = bcsub($totalExpense, $totalIncome , 3);
+        $totalBalance = bcsub($totalIncome , $totalExpense , 3);
 
         return response()->json([
             'success' => true,
