@@ -87,4 +87,23 @@ class TransactionController extends Controller
         $transaction->delete();
         return response()->json([] , 204);
     }
+
+    public function summary() {
+        $transactions = Auth::user()->transactions();
+
+        $totalIncome = (clone $transactions)->where('type' , 'income')->sum('amount');
+        $totalExpense = (clone $transactions)->where('type' , 'expense')->sum('amount');
+        $totalBalance = bcsub($totalExpense, $totalIncome , 3);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Dashboard summary retrieved successfully',
+            'data' => [
+                'totalIncome' => $totalIncome,
+                'totalExpense' => $totalExpense,
+                'totalBalance' => $totalBalance,
+                'currency' => 'EGP'
+            ]
+        ] , 200);
+    }
 }
