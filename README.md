@@ -1,57 +1,219 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Finance Tracker API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A RESTful API built with Laravel and Laravel Sanctum for tracking personal income and expenses.
 
-## About Laravel
+## Requirements
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.1+
+- Composer
+- MySQL / SQLite
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
-
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
-
-## Learning Laravel
-
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
-
-In addition, [Laracasts](https://laracasts.com) contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
-
-You can also watch bite-sized lessons with real-world projects on [Laravel Learn](https://laravel.com/learn), where you will be guided through building a Laravel application from scratch while learning PHP fundamentals.
-
-## Agentic Development
-
-Laravel's predictable structure and conventions make it ideal for AI coding agents like Claude Code, Cursor, and GitHub Copilot. Install [Laravel Boost](https://laravel.com/docs/ai) to supercharge your AI workflow:
+## Setup
 
 ```bash
-composer require laravel/boost --dev
-
-php artisan boost:install
+git clone <repo-url>
+cd finance-tracker
+composer install
+cp .env.example .env
+php artisan key:generate
+php artisan migrate
+php artisan serve
 ```
 
-Boost provides your agent 15+ tools and skills that help agents build Laravel applications while following best practices.
+## Authentication
 
-## Contributing
+All transaction endpoints require a Bearer token obtained from register or login.
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+```
+Authorization: Bearer <token>
+```
 
-## Code of Conduct
+---
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## API Endpoints
 
-## Security Vulnerabilities
+### Auth
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/register` | Register a new user |
+| POST | `/api/login` | Login and receive a token |
+
+#### POST /api/register
+
+**Request Body**
+```json
+{
+  "name": "Ahmed Adel",
+  "email": "ahmed@example.com",
+  "password": "secret123"
+}
+```
+
+**Response** `201`
+```json
+{
+  "success": true,
+  "user": { "id": 1, "name": "Ahmed Adel", "email": "ahmed@example.com" },
+  "token": "1|abc123..."
+}
+```
+
+#### POST /api/login
+
+**Request Body**
+```json
+{
+  "email": "ahmed@example.com",
+  "password": "secret123"
+}
+```
+
+**Response** `200`
+```json
+{
+  "success": true,
+  "user": { "id": 1, "name": "Ahmed Adel", "email": "ahmed@example.com" },
+  "token": "2|xyz456..."
+}
+```
+
+---
+
+### Transactions
+
+All endpoints below require `Authorization: Bearer <token>`.
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/transactions` | List all transactions (paginated) |
+| POST | `/api/transactions` | Create a new transaction |
+| GET | `/api/transactions/{id}` | Get a single transaction |
+| PUT/PATCH | `/api/transactions/{id}` | Update a transaction |
+| DELETE | `/api/transactions/{id}` | Delete a transaction |
+| GET | `/api/transactions/summary` | Get income/expense summary |
+| GET | `/api/transactions/search?query=` | Search transactions |
+
+#### Transaction Fields
+
+| Field | Type | Rules |
+|-------|------|-------|
+| `title` | string | required, 3–255 chars |
+| `amount` | numeric | required, min 0.01 |
+| `type` | string | required, `income` or `expense` |
+| `category` | string | required, max 100 chars |
+| `date` | date | required |
+| `description` | string | optional, max 2000 chars |
+
+#### GET /api/transactions
+
+Returns paginated list of the authenticated user's transactions (10 per page), ordered by newest first.
+
+**Response** `200`
+```json
+{
+  "success": true,
+  "message": "List all transactions",
+  "data": {
+    "current_page": 1,
+    "data": [ { "id": "uuid", "title": "Salary", "amount": "5000.00", "type": "income" } ],
+    "per_page": 10,
+    "total": 42
+  }
+}
+```
+
+#### POST /api/transactions
+
+**Request Body**
+```json
+{
+  "title": "Grocery Shopping",
+  "amount": 150.75,
+  "type": "expense",
+  "category": "Food",
+  "date": "2026-07-04",
+  "description": "Weekly groceries"
+}
+```
+
+**Response** `201`
+```json
+{
+  "success": true,
+  "message": "Transaction created",
+  "data": { ... }
+}
+```
+
+#### GET /api/transactions/{id}
+
+**Response** `200`
+```json
+{
+  "success": true,
+  "message": "Transaction details",
+  "data": { "id": "uuid", "title": "Grocery Shopping" }
+}
+```
+
+Returns `403` if the transaction belongs to another user.
+
+#### PUT /api/transactions/{id}
+
+Same request body as POST. Returns `403` if unauthorized.
+
+**Response** `200`
+```json
+{
+  "success": true,
+  "message": "Transaction updated",
+  "data": { ... }
+}
+```
+
+#### DELETE /api/transactions/{id}
+
+Returns `204 No Content` on success. Returns `403` if unauthorized.
+
+#### GET /api/transactions/summary
+
+**Response** `200`
+```json
+{
+  "success": true,
+  "message": "Dashboard summary retrieved successfully",
+  "data": {
+    "totalIncome": "15000.00",
+    "totalExpense": "8500.00",
+    "totalBalance": "-6500.000",
+    "currency": "EGP"
+  }
+}
+```
+
+#### GET /api/transactions/search?query=groceries
+
+Searches `title` and `description` fields. Returns paginated results (10 per page).
+
+**Response** `200`
+```json
+{
+  "success": true,
+  "message": "Search results retrieved successfully",
+  "data": { "current_page": 1, "data": [ ... ], "total": 3 }
+}
+```
+
+---
+
+## Error Responses
+
+| Status | Meaning |
+|--------|---------|
+| `401` | Unauthenticated — invalid or missing token |
+| `403` | Forbidden — resource belongs to another user |
+| `422` | Validation failed — check field errors in response |
 
 ## License
 
