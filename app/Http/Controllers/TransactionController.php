@@ -108,4 +108,20 @@ class TransactionController extends Controller
             ]
         ] , 200);
     }
+
+    public function search(Request $request) {
+        $query = $request->input('query');
+        $transactions = Auth::user()->transactions()
+            ->where(function ($q) use ($query) {
+                $q->where('title', 'like', "%{$query}%")
+                    ->orWhere('description', 'like', "%{$query}%");
+            })
+            ->paginate(10);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Search results retrieved successfully',
+            'data' => $transactions
+        ]);
+    }
 }
