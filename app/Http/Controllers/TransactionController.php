@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreTransactionRequest;
 use App\Http\Requests\UpdateTransactionRequest;
+use App\Http\Resources\TransactionResource;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -13,11 +14,12 @@ class TransactionController extends Controller
     public function index() {
         $transactions = Auth::user()->transactions()->latest()->paginate(10);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'List all transactions',
-            'data' => $transactions
-        ] , 200);
+        return TransactionResource::collection($transactions)->additional(
+            [
+                'success' => true ,
+                'message' => 'Transactions retrieved successfully'
+            ]
+        );
     }
 
     public function show(Transaction $transaction)
@@ -31,7 +33,7 @@ class TransactionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Transaction details',
-            'data' => $transaction
+            'data' => new TransactionResource($transaction)
         ] , 200);
     }
 
@@ -43,7 +45,7 @@ class TransactionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Transaction created',
-            'data' => $transaction
+            'data' => new TransactionResource($transaction)
         ] , 201);
     }
     public function update(UpdateTransactionRequest $request , Transaction $transaction)
@@ -62,7 +64,7 @@ class TransactionController extends Controller
         return response()->json([
             'success' => true,
             'message' => 'Transaction updated',
-            'data' => $transaction
+            'data' => new TransactionResource($transaction)
         ] , 200);
     }
 
@@ -105,10 +107,11 @@ class TransactionController extends Controller
             })
             ->paginate(10);
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Search results retrieved successfully',
-            'data' => $transactions
-        ]);
+        return TransactionResource::collection($transactions)->additional(
+            [
+                'success' => true,
+                'message' => 'Search results',
+            ]
+        );
     }
 }
