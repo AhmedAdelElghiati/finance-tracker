@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreTransactionRequest;
+use App\Http\Requests\UpdateTransactionRequest;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,25 +35,18 @@ class TransactionController extends Controller
         ] , 200);
     }
 
-    public function store(Request $request) {
-        $validatedData = $request->validate([
-            'title' => ['required' , 'string' , 'min:3' , 'max:255'],
-            'description' => ['string' , 'nullable' , 'max:2000'],
-            'amount' => ['required' , 'numeric' , 'min:0.01'],
-            'type' => ['required' , 'in:income,expense'],
-            'category' => ['required' , 'string' , 'max:100'],
-            'date' => ['required' , 'date']
-        ]);
+    public function store(StoreTransactionRequest $request) {
+        $validatedData = $request->validated();
 
-        Auth::user()->transactions()->create($validatedData);
+        $transaction =  Auth::user()->transactions()->create($validatedData);
 
         return response()->json([
             'success' => true,
             'message' => 'Transaction created',
-            'data' => $validatedData
+            'data' => $transaction
         ] , 201);
     }
-    public function update(Request $request , Transaction $transaction)
+    public function update(UpdateTransactionRequest $request , Transaction $transaction)
     {
         if(Auth::id() != $transaction->user_id) {
             return response()->json([
@@ -60,17 +55,9 @@ class TransactionController extends Controller
             ] , 403);
         }
 
-        $validatedData = $request->validate([
-            'title' => ['required' , 'string' , 'min:3' , 'max:255'],
-            'description' => ['string' , 'nullable' , 'max:2000'],
-            'amount' => ['required' , 'numeric' , 'min:0.01'],
-            'type' => ['required' , 'in:income,expense'],
-            'category' => ['required' , 'string' , 'max:100'],
-            'date' => ['required' , 'date']
-        ]);
+       $validatedData = $request->validated();
 
        $transaction->update($validatedData);
-
 
         return response()->json([
             'success' => true,
